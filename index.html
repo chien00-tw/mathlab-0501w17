@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>消失的領地 - 數感互動學習系統</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- QRCode.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@600;800;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #F8FAFC;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 適合兒童 iPad 觸控的強化樣式 */
+        .btn-touch {
+            min-height: 60px;
+            border-bottom-width: 6px;
+            transition: all 0.15s ease-in-out;
+        }
+        .btn-touch:active {
+            transform: translateY(3px);
+            border-bottom-width: 2px;
+        }
+        
+        /* 隱藏捲動條但保留功能 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Canvas 高畫質顯示支援 */
+        canvas {
+            touch-action: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="text-slate-800 flex flex-col min-h-screen justify-between select-none">
+
+    <!-- 頂部工具列 (完全僅使用圖示，無任何文字說明標籤) -->
+    <header class="bg-indigo-900 text-white p-3 shadow-lg sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            
+            <!-- 左側：系統名稱與版本號 -->
+            <div class="flex items-center gap-3">
+                <span class="text-2xl font-black tracking-wide text-amber-300">消失的領地</span>
+                <span class="bg-indigo-800 text-indigo-200 text-xs px-2.5 py-1 rounded-full font-mono border border-indigo-700">v1.3.0 - Build 2026.08</span>
+            </div>
+
+            <!-- 右側功能鍵區：完全僅圖示 ①QR Code ➔ ②全螢幕 ➔ ③教師專區 ➔ ④課程指引 -->
+            <div class="flex items-center gap-2 md:gap-4">
+                <!-- ① QR Code 掃碼連結 -->
+                <button onclick="openModal('qrModal')" class="w-12 h-12 md:w-14 md:h-14 bg-indigo-700 hover:bg-indigo-600 active:bg-indigo-800 rounded-2xl flex items-center justify-center text-xl md:text-2xl shadow-md transition-all border-b-4 border-indigo-950" aria-label="QR Code">
+                    <i class="fa-solid fa-qrcode text-amber-300"></i>
+                </button>
+
+                <!-- ② 全螢幕 toggle -->
+                <button onclick="toggleFullscreen()" class="w-12 h-12 md:w-14 md:h-14 bg-indigo-700 hover:bg-indigo-600 active:bg-indigo-800 rounded-2xl flex items-center justify-center text-xl md:text-2xl shadow-md transition-all border-b-4 border-indigo-950" aria-label="Maximize">
+                    <i id="fullscreenIcon" class="fa-solid fa-expand text-sky-300"></i>
+                </button>
+
+                <!-- ③ 教師專區 -->
+                <button onclick="openModal('teacherAuthModal')" class="w-12 h-12 md:w-14 md:h-14 bg-indigo-700 hover:bg-indigo-600 active:bg-indigo-800 rounded-2xl flex items-center justify-center text-xl md:text-2xl shadow-md transition-all border-b-4 border-indigo-950" aria-label="Teacher Zone">
+                    <i class="fa-solid fa-chalkboard-user text-emerald-300"></i>
+                </button>
+
+                <!-- ④ 課程指引 -->
+                <button onclick="openModal('guideModal')" class="w-12 h-12 md:w-14 md:h-14 bg-indigo-700 hover:bg-indigo-600 active:bg-indigo-800 rounded-2xl flex items-center justify-center text-xl md:text-2xl shadow-md transition-all border-b-4 border-indigo-950" aria-label="Course Guide">
+                    <i class="fa-solid fa-book-open text-rose-300"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要學習區域 -->
+    <main class="max-w-5xl w-full mx-auto p-4 md:p-6 flex-grow space-y-8">
+
+        <!-- 導覽頁籤 (活動切換) -->
+        <nav class="grid grid-cols-3 gap-3 bg-slate-200 p-2 rounded-2xl shadow-inner">
+            <button id="nav-tab1" onclick="switchTab(1)" class="py-3 md:py-4 rounded-xl text-lg md:text-2xl font-extrabold transition-all bg-amber-400 text-slate-900 shadow-md">
+                一、農夫爭地
+            </button>
+            <button id="nav-tab2" onclick="switchTab(2)" class="py-3 md:py-4 rounded-xl text-lg md:text-2xl font-extrabold transition-all text-slate-600 hover:bg-slate-300">
+                二、圖形變身
+            </button>
+            <button id="nav-tab3" onclick="switchTab(3)" class="py-3 md:py-4 rounded-xl text-lg md:text-2xl font-extrabold transition-all text-slate-600 hover:bg-slate-300">
+                三、思考反思
+            </button>
+        </nav>
+
+        <!-- ==================== 活動一：課程導入 (農夫爭地) ==================== -->
+        <section id="act1" class="space-y-6">
+            <!-- 故事卡片 -->
+            <div class="bg-white rounded-3xl p-6 md:p-8 border-4 border-indigo-100 shadow-xl space-y-6">
+                <div class="flex items-center gap-3 text-indigo-900">
+                    <i class="fa-solid fa-book-open-reader text-3xl text-amber-500"></i>
+                    <h2 class="text-2xl md:text-3xl font-black">土地爭奪故事</h2>
+                </div>
+
+                <div class="bg-amber-50 p-6 rounded-2xl border-2 border-amber-200 text-lg md:text-2xl leading-relaxed text-slate-800">
+                    森林邊緣住著一位<strong class="text-emerald-700">阿基伯</strong>與一位<strong class="text-blue-700">山姆叔叔</strong>。他們各自擁有一塊土地，且兩塊土地的<strong class="text-rose-600">「底」與「高」完全相同</strong>！
+                    然而，阿基伯的土地是<strong class="text-emerald-700">「平行四邊形」</strong>，山姆叔叔的土地是<strong class="text-blue-700">「三角形」</strong>。兩人每天都為了誰的土地比較大爭吵不休……
+                </div>
+
+                <!-- 互動圖表比較展示 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                    <!-- 平行四邊形土地 -->
+                    <div class="bg-emerald-50 border-4 border-emerald-300 rounded-2xl p-4 text-center">
+                        <span class="text-xl md:text-2xl font-extrabold text-emerald-800 block mb-2">阿基伯的土地 (平行四邊形)</span>
+                        <svg viewBox="0 0 300 180" class="w-full h-44 mx-auto">
+                            <polygon points="60,140 220,140 260,40 100,40" fill="#a7f3d0" stroke="#059669" stroke-width="4"/>
+                            <!-- 底與高標示 -->
+                            <line x1="60" y1="140" x2="220" y2="140" stroke="#dc2626" stroke-width="4" stroke-dasharray="6,6"/>
+                            <text x="140" y="165" font-size="18" font-weight="bold" fill="#dc2626">底 = 10 公尺</text>
+                            <line x1="100" y1="40" x2="100" y2="140" stroke="#2563eb" stroke-width="4" stroke-dasharray="4,4"/>
+                            <text x="110" y="95" font-size="18" font-weight="bold" fill="#2563eb">高 = 6 公尺</text>
+                        </svg>
+                    </div>
+
+                    <!-- 三角形土地 -->
+                    <div class="bg-sky-50 border-4 border-sky-300 rounded-2xl p-4 text-center">
+                        <span class="text-xl md:text-2xl font-extrabold text-sky-800 block mb-2">山姆叔叔的土地 (三角形)</span>
+                        <svg viewBox="0 0 300 180" class="w-full h-44 mx-auto">
+                            <polygon points="60,140 220,140 140,40" fill="#bae6fd" stroke="#0284c7" stroke-width="4"/>
+                            <!-- 底與高標示 -->
+                            <line x1="60" y1="140" x2="220" y2="140" stroke="#dc2626" stroke-width="4" stroke-dasharray="6,6"/>
+                            <text x="140" y="165" font-size="18" font-weight="bold" fill="#dc2626">底 = 10 公尺</text>
+                            <line x1="140" y1="40" x2="140" y2="140" stroke="#2563eb" stroke-width="4" stroke-dasharray="4,4"/>
+                            <text x="150" y="95" font-size="18" font-weight="bold" fill="#2563eb">高 = 6 公尺</text>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 學生猜測選單 -->
+            <div class="bg-white rounded-3xl p-6 md:p-8 border-4 border-amber-200 shadow-xl space-y-4">
+                <h3 class="text-xl md:text-3xl font-black text-center text-slate-900">
+                    <i class="fa-solid fa-circle-question text-amber-500 mr-2"></i>猜一猜：誰的土地面積比較大？
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                    <button id="btnPred1" onclick="makePrediction('平行四邊形比較大', 1)" class="btn-touch bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xl md:text-2xl rounded-2xl border-b-emerald-700 shadow-lg p-4">
+                        阿基伯比較大<br><span class="text-sm font-normal">(平行四邊形)</span>
+                    </button>
+                    <button id="btnPred2" onclick="makePrediction('三角形比較大', 2)" class="btn-touch bg-sky-500 hover:bg-sky-600 text-white font-extrabold text-xl md:text-2xl rounded-2xl border-b-sky-700 shadow-lg p-4">
+                        山姆叔叔比較大<br><span class="text-sm font-normal">(三角形)</span>
+                    </button>
+                    <button id="btnPred3" onclick="makePrediction('兩者一樣大', 3)" class="btn-touch bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xl md:text-2xl rounded-2xl border-b-amber-700 shadow-lg p-4">
+                        兩個人一樣大<br><span class="text-sm font-normal">(面積相同)</span>
+                    </button>
+                </div>
+                <div id="predictionResult" class="hidden text-center p-4 bg-indigo-50 border-2 border-indigo-200 rounded-xl text-xl font-bold text-indigo-900"></div>
+            </div>
+        </section>
+
+        <!-- ==================== 活動二：核心發展 (HTML5 Canvas 動態圖形實驗) ==================== -->
+        <section id="act2" class="space-y-8 hidden">
+            
+            <!-- 任務 1：平行四邊形轉化為長方形 (Canvas 互動 1) -->
+            <div class="bg-white rounded-3xl p-6 md:p-8 border-4 border-indigo-100 shadow-xl space-y-6">
+                <div class="flex justify-between items-center flex-wrap gap-2">
+                    <h3 class="text-2xl md:text-3xl font-black text-indigo-900 flex items-center gap-3">
+                        <span class="bg-indigo-600 text-white rounded-2xl w-10 h-10 flex items-center justify-center text-xl">1</span>
+                        平行四邊形 剪貼 Canvas 實驗室
+                    </h3>
+                    <span class="text-lg font-bold text-slate-500">平移剪裁 (支援手勢拖曳)</span>
+                </div>
+
+                <!-- Dynamic HTML5 Canvas 畫布 1 -->
+                <div class="bg-slate-100 rounded-2xl p-4 border-2 border-slate-300 text-center relative overflow-hidden space-y-4">
+                    <canvas id="canvas1" class="w-full max-w-xl mx-auto h-60 bg-white rounded-xl shadow-inner border border-slate-200"></canvas>
+                    
+                    <!-- iPad 拖曳控制滑桿 -->
+                    <div class="max-w-xl mx-auto flex items-center gap-4 bg-slate-200 p-3 rounded-2xl">
+                        <span class="text-lg font-bold text-slate-700 min-w-fit"><i class="fa-solid fa-arrows-left-right text-emerald-600 mr-1"></i>平移進度：</span>
+                        <input type="range" id="paraSlider" min="0" max="100" value="0" oninput="onParaSliderChange(this.value)" class="w-full h-3 bg-emerald-200 rounded-lg appearance-none cursor-pointer accent-emerald-600">
+                        <span id="paraPercent" class="text-xl font-black text-emerald-800 min-w-[50px]">0%</span>
+                    </div>
+
+                    <!-- 操作按鈕 -->
+                    <div class="flex justify-center gap-3 md:gap-6 flex-wrap">
+                        <button onclick="animateParaTransform()" class="btn-touch bg-emerald-600 hover:bg-emerald-700 text-white text-xl font-black px-6 py-3 rounded-2xl border-b-emerald-900 shadow-md flex items-center gap-2">
+                            <i class="fa-solid fa-play"></i>自動剪貼展示
+                        </button>
+                        <button onclick="resetParaCanvas()" class="btn-touch bg-slate-500 hover:bg-slate-600 text-white text-xl font-black px-6 py-3 rounded-2xl border-b-slate-800 shadow-md flex items-center gap-2">
+                            <i class="fa-solid fa-rotate-left"></i>復原原狀
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-emerald-50 p-4 rounded-2xl border-2 border-emerald-200 text-lg md:text-xl font-bold text-emerald-950">
+                    <i class="fa-solid fa-lightbulb text-amber-500 mr-2 text-2xl"></i>
+                    發現：平行四邊形剪貼後會變成<strong class="text-rose-600">長方形</strong>，底與高完全相同：
+                    <div class="text-center my-2 text-2xl md:text-3xl font-black text-indigo-900">平行四邊形面積 = 底 × 高</div>
+                </div>
+            </div>
+
+            <!-- 任務 2：兩全等三角形拼平行四邊形 (Canvas 互動 2) -->
+            <div class="bg-white rounded-3xl p-6 md:p-8 border-4 border-indigo-100 shadow-xl space-y-6">
+                <div class="flex justify-between items-center flex-wrap gap-2">
+                    <h3 class="text-2xl md:text-3xl font-black text-indigo-900 flex items-center gap-3">
+                        <span class="bg-indigo-600 text-white rounded-2xl w-10 h-10 flex items-center justify-center text-xl">2</span>
+                        雙三角形 拼貼 Canvas 實驗室
+                    </h3>
+                    <span class="text-lg font-bold text-slate-500">旋轉 180° (支援手勢旋轉)</span>
+                </div>
+
+                <!-- Dynamic HTML5 Canvas 畫布 2 -->
+                <div class="bg-slate-100 rounded-2xl p-4 border-2 border-slate-300 text-center relative overflow-hidden space-y-4">
+                    <canvas id="canvas2" class="w-full max-w-xl mx-auto h-60 bg-white rounded-xl shadow-inner border border-slate-200"></canvas>
+                    
+                    <!-- iPad 旋轉滑桿 -->
+                    <div class="max-w-xl mx-auto flex items-center gap-4 bg-slate-200 p-3 rounded-2xl">
+                        <span class="text-lg font-bold text-slate-700 min-w-fit"><i class="fa-solid fa-rotate text-sky-600 mr-1"></i>旋轉角度：</span>
+                        <input type="range" id="triSlider" min="0" max="180" value="0" oninput="onTriSliderChange(this.value)" class="w-full h-3 bg-sky-200 rounded-lg appearance-none cursor-pointer accent-sky-600">
+                        <span id="triAngle" class="text-xl font-black text-sky-800 min-w-[50px]">0°</span>
+                    </div>
+
+                    <!-- 操作按鈕 -->
+                    <div class="flex justify-center gap-3 md:gap-6 flex-wrap">
+                        <button onclick="animateTriRotate()" class="btn-touch bg-sky-600 hover:bg-sky-700 text-white text-xl font-black px-6 py-3 rounded-2xl border-b-sky-900 shadow-md flex items-center gap-2">
+                            <i class="fa-solid fa-play"></i>自動旋轉拼貼
+                        </button>
+                        <button onclick="resetTriCanvas()" class="btn-touch bg-slate-500 hover:bg-slate-600 text-white text-xl font-black px-6 py-3 rounded-2xl border-b-slate-800 shadow-md flex items-center gap-2">
+                            <i class="fa-solid fa-rotate-left"></i>復原原狀
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-sky-50 p-4 rounded-2xl border-2 border-sky-200 text-lg md:text-xl font-bold text-sky-950">
+                    <i class="fa-solid fa-lightbulb text-amber-500 mr-2 text-2xl"></i>
+                    發現：兩個全等的三角形可以拼成一個平行四邊形，所以單個三角形面積要<strong class="text-rose-600">除以 2</strong>：
+                    <div class="text-center my-2 text-2xl md:text-3xl font-black text-indigo-900">三角形面積 = (底 × 高) ÷ 2</div>
+                </div>
+            </div>
+
+            <!-- 任務 3：生態棲地反思討論 -->
+            <div class="bg-amber-50 rounded-3xl p-6 md:p-8 border-4 border-amber-300 shadow-xl space-y-4">
+                <h3 class="text-2xl md:text-3xl font-black text-amber-900 flex items-center gap-3">
+                    <i class="fa-solid fa-leaf text-emerald-600"></i>
+                    生態反思：直線切割對土地與動物的影響？
+                </h3>
+                <p class="text-lg md:text-2xl leading-relaxed text-slate-800">
+                    在數學中，我們可以用直線隨意切割、旋轉圖形。但如果這塊土地是森林與動物的家，人為地劃分直線圍籬，會對棲息在裡面的動物造成什麼樣的影響呢？
+                </p>
+            </div>
+        </section>
+
+        <!-- ==================== 活動三：綜合歸納 (4F引導反思) ==================== -->
+        <section id="act3" class="space-y-6 hidden">
+            <div class="bg-white rounded-3xl p-6 md:p-8 border-4 border-indigo-100 shadow-xl space-y-6">
+                <div class="flex items-center gap-3 text-indigo-900 border-b-4 border-indigo-100 pb-4">
+                    <i class="fa-solid fa-pen-to-square text-3xl text-indigo-600"></i>
+                    <h2 class="text-2xl md:text-3xl font-black">4F 學習反思單</h2>
+                </div>
+
+                <form id="reflectionForm" onsubmit="submitReflection(event)" class="space-y-6">
+                    <!-- [Facts] -->
+                    <div class="space-y-2">
+                        <label class="block text-xl md:text-2xl font-black text-slate-800" for="f_facts">
+                            <span class="bg-blue-600 text-white px-3 py-1 rounded-lg mr-2">Facts</span>
+                            今天我們嘗試將平行四邊形與三角形轉化成哪種圖形？
+                        </label>
+                        <textarea id="f_facts" rows="2" class="w-full p-4 border-4 border-slate-300 rounded-2xl text-xl font-bold focus:border-indigo-500 focus:outline-none" placeholder="請在此輸入你的發現..."></textarea>
+                    </div>
+
+                    <!-- [Feelings] -->
+                    <div class="space-y-2">
+                        <label class="block text-xl md:text-2xl font-black text-slate-800" for="f_feelings">
+                            <span class="bg-emerald-600 text-white px-3 py-1 rounded-lg mr-2">Feelings</span>
+                            當你親手把圖形拼湊成功時，你有什麼樣的感覺？
+                        </label>
+                        <textarea id="f_feelings" rows="2" class="w-full p-4 border-4 border-slate-300 rounded-2xl text-xl font-bold focus:border-indigo-500 focus:outline-none" placeholder="請在此輸入你的感受..."></textarea>
+                    </div>
+
+                    <!-- [Findings] -->
+                    <div class="space-y-2">
+                        <label class="block text-xl md:text-2xl font-black text-slate-800" for="f_findings">
+                            <span class="bg-amber-500 text-white px-3 py-1 rounded-lg mr-2">Findings</span>
+                            觀察平行四邊形與三角形公式，你發現了什麼共同特徵？
+                        </label>
+                        <textarea id="f_findings" rows="2" class="w-full p-4 border-4 border-slate-300 rounded-2xl text-xl font-bold focus:border-indigo-500 focus:outline-none" placeholder="請在此輸入公式的共同點..."></textarea>
+                    </div>
+
+                    <!-- [Future] -->
+                    <div class="space-y-2">
+                        <label class="block text-xl md:text-2xl font-black text-slate-800" for="f_future">
+                            <span class="bg-rose-600 text-white px-3 py-1 rounded-lg mr-2">Future</span>
+                            下次遇到更複雜的圖形（如五邊形），你會嘗試用什麼方法計算？
+                        </label>
+                        <textarea id="f_future" rows="2" class="w-full p-4 border-4 border-slate-300 rounded-2xl text-xl font-bold focus:border-indigo-500 focus:outline-none" placeholder="請在此輸入你的未來解題策略..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-touch w-full bg-indigo-600 hover:bg-indigo-700 text-white text-2xl font-black rounded-2xl border-b-indigo-900 shadow-xl py-4">
+                        <i class="fa-solid fa-paper-plane mr-2"></i>提交反思紀錄
+                    </button>
+                </form>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 頁尾 (嚴格符合規範要求：數感實驗室  | 互動學習系統 | 教材設計：S.C. Kuo) -->
+    <footer class="bg-slate-900 text-slate-300 py-6 text-center text-lg font-bold border-t-4 border-slate-700">
+        數感實驗室  | 互動學習系統 | 教材設計：S.C. Kuo
+    </footer>
+
+    <!-- ==================== 彈出對話視窗 MODALS ==================== -->
+
+    <!-- ① QR Code 彈窗 (支援背景點擊關閉) -->
+    <div id="qrModal" onclick="onBackdropClick(event, 'qrModal')" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-sm w-full text-center space-y-6 shadow-2xl border-4 border-indigo-200">
+            <h3 class="text-2xl font-black text-slate-900">掃描開啟目前網頁</h3>
+            
+            <!-- 動態 QR Code 生成區域 -->
+            <div id="qrcode" class="flex justify-center p-3 bg-white border-4 border-slate-200 rounded-2xl mx-auto w-52 h-52 items-center"></div>
+            
+            <div class="space-y-3">
+                <button onclick="copyPageUrl()" class="btn-touch w-full bg-emerald-500 hover:bg-emerald-600 text-white text-xl font-extrabold py-3 rounded-2xl border-b-emerald-700 shadow-md flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-copy"></i>一鍵複製網址
+                </button>
+                <button onclick="closeModal('qrModal')" class="btn-touch w-full bg-slate-200 hover:bg-slate-300 text-slate-800 text-xl font-extrabold py-3 rounded-2xl border-b-slate-400">
+                    關閉
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ③ 教師專區 密碼驗證彈窗 (密碼 teacher，頁面完全無暗示，支援 Enter 鍵驗證) -->
+    <div id="teacherAuthModal" onclick="onBackdropClick(event, 'teacherAuthModal')" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full text-center space-y-6 shadow-2xl border-4 border-indigo-200">
+            <h3 class="text-2xl font-black text-slate-900"><i class="fa-solid fa-lock text-indigo-600 mr-2"></i>教師專區驗證</h3>
+            
+            <div class="space-y-2">
+                <input type="password" id="teacherPassword" onkeyup="if(event.key === 'Enter') verifyTeacher()" class="w-full text-center text-2xl p-4 border-4 border-slate-300 rounded-2xl focus:border-indigo-600 focus:outline-none" placeholder="請輸入通行密碼">
+                <p id="authError" class="text-rose-600 font-bold hidden">密碼不正確，請重新輸入</p>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="closeModal('teacherAuthModal')" class="btn-touch w-1/2 bg-slate-200 text-slate-800 text-xl font-extrabold py-3 rounded-2xl border-b-slate-400">
+                    取消
+                </button>
+                <button onclick="verifyTeacher()" class="btn-touch w-1/2 bg-indigo-600 text-white text-xl font-extrabold py-3 rounded-2xl border-b-indigo-900 shadow-md">
+                    登入
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 教師數據專區 內容彈窗 -->
+    <div id="teacherDashboardModal" onclick="onBackdropClick(event, 'teacherDashboardModal')" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto no-scrollbar space-y-6 shadow-2xl border-4 border-indigo-300">
+            <div class="flex justify-between items-center border-b-4 border-slate-100 pb-4">
+                <h3 class="text-2xl md:text-3xl font-black text-indigo-900">
+                    <i class="fa-solid fa-chart-line text-emerald-500 mr-2"></i>教師管理專區 (學習歷程)
+                </h3>
+                <button onclick="closeModal('teacherDashboardModal')" class="text-slate-400 hover:text-slate-600 text-3xl font-black">
+                    &times;
+                </button>
+            </div>
+
+            <!-- 數據分析卡片 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-indigo-50 p-4 rounded-2xl border-2 border-indigo-200">
+                    <span class="text-lg font-bold text-indigo-700 block">學生猜測紀錄</span>
+                    <span id="dashPrediction" class="text-2xl font-black text-indigo-950">尚無猜測數據</span>
+                </div>
+                <div class="bg-emerald-50 p-4 rounded-2xl border-2 border-emerald-200">
+                    <span class="text-lg font-bold text-emerald-700 block">幾何剪貼探索狀態</span>
+                    <span id="dashGeoStatus" class="text-2xl font-black text-emerald-950">未完成操作</span>
+                </div>
+            </div>
+
+            <!-- 4F 反思提交數據 -->
+            <div class="space-y-3 text-left">
+                <h4 class="text-xl font-black text-slate-800">最新 4F 反思學生記錄：</h4>
+                <div id="dashReflections" class="bg-slate-50 p-4 rounded-2xl border-2 border-slate-200 space-y-2 text-lg">
+                    <p class="text-slate-500 font-bold">目前無提交的反思資料。</p>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t-2 border-slate-200 flex justify-between gap-4">
+                <button onclick="clearAllData()" class="btn-touch bg-rose-500 hover:bg-rose-600 text-white font-extrabold px-6 py-3 rounded-2xl border-b-rose-800 flex items-center gap-2">
+                    <i class="fa-solid fa-trash"></i>清除所有數據
+                </button>
+                <button onclick="closeModal('teacherDashboardModal')" class="btn-touch bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold px-8 py-3 rounded-2xl border-b-indigo-900">
+                    完成關閉
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ④ 課程指引 彈窗 -->
+    <div id="guideModal" onclick="onBackdropClick(event, 'guideModal')" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-2xl w-full max-h-[85vh] overflow-y-auto no-scrollbar space-y-6 shadow-2xl border-4 border-indigo-200">
+            <h3 class="text-2xl md:text-3xl font-black text-indigo-900 border-b-4 border-indigo-100 pb-3">
+                <i class="fa-solid fa-compass text-rose-500 mr-2"></i>課程簡介與教學指引
+            </h3>
+            
+            <div class="space-y-4 text-lg md:text-xl text-slate-700 leading-relaxed text-left">
+                <div class="bg-amber-50 p-4 rounded-2xl border-2 border-amber-200">
+                    <strong class="text-amber-900 block text-xl mb-1">主題：消失的領地</strong>
+                    本課程旨在引導國小五年級學生透過動態 Canvas 幾何圖形的剪裁、拼貼與旋轉，探索平行四邊形與三角形的面積計算公式推導邏輯。
+                </div>
+                
+                <ul class="space-y-3 font-bold">
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-check text-emerald-500 mt-1"></i>
+                        <span><strong>活動一：</strong>觀察故事衝突，引導預測平行四邊形與三角形土地面積大小。</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-check text-emerald-500 mt-1"></i>
+                        <span><strong>活動二：</strong>動態 Canvas 圖形操作，建立「底×高」及「除以2」的視覺轉換經驗，並連結生態界線反思。</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-check text-emerald-500 mt-1"></i>
+                        <span><strong>活動三：</strong>運用 4F 引導思考架構（Facts, Feelings, Findings, Future）進行後設認知歸納。</span>
+                    </li>
+                </ul>
+            </div>
+
+            <button onclick="closeModal('guideModal')" class="btn-touch w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xl font-extrabold py-3 rounded-2xl border-b-indigo-900">
+                理解並開始學習
+            </button>
+        </div>
+    </div>
+
+    <!-- 訊息提示 Toast 通知 -->
+    <div id="toast" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl text-xl font-bold hidden z-50 flex items-center gap-3">
+        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toastMsg">操作成功</span>
+    </div>
+
+    <!-- JavaScript 邏輯控制層 -->
+    <script>
+        /* 全局學習歷程狀態 (預設數據歸零) */
+        let learningData = {
+            prediction: "",
+            paraTransformed: false,
+            triRotated: false,
+            reflection: {
+                facts: "",
+                feelings: "",
+                findings: "",
+                future: ""
+            }
+        };
+
+        // Canvas 畫布邏輯全域變數
+        let canvas1, ctx1, canvas2, ctx2;
+        let paraProgress = 0; // 0 to 100
+        let triAngleProgress = 0; // 0 to 180
+        let paraAnimId = null;
+        let triAnimId = null;
+
+        // 觸控拖曳控制狀態
+        let isDraggingCanvas1 = false;
+        let isDraggingCanvas2 = false;
+        let lastTouchX = 0;
+
+        window.onload = function() {
+            // 初始化 QR Code
+            generateQrCode();
+
+            // 初始化 Canvas 畫布
+            initCanvases();
+
+            // 鍵盤 ESC 關閉 Modal
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    ['qrModal', 'teacherAuthModal', 'teacherDashboardModal', 'guideModal'].forEach(closeModal);
+                }
+            });
+
+            // 視窗大小改變時，重繪 Canvas
+            window.addEventListener('resize', () => {
+                drawCanvas1();
+                drawCanvas2();
+            });
+        };
+
+        // QR Code 生成器
+        function generateQrCode() {
+            const qrContainer = document.getElementById("qrcode");
+            if (!qrContainer) return;
+            qrContainer.innerHTML = "";
+            const currentUrl = window.location.href;
+            new QRCode(qrContainer, {
+                text: currentUrl,
+                width: 180,
+                height: 180,
+                colorDark : "#0f172a",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        }
+
+        // Modal 控制與點擊背景關閉
+        function openModal(id) {
+            if(id === 'qrModal') generateQrCode();
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            if (modal) modal.classList.add('hidden');
+            if (id === 'teacherAuthModal') {
+                const pwdInput = document.getElementById('teacherPassword');
+                if (pwdInput) pwdInput.value = '';
+                const errBox = document.getElementById('authError');
+                if (errBox) errBox.classList.add('hidden');
+            }
+        }
+
+        function onBackdropClick(event, id) {
+            if (event.target.id === id) {
+                closeModal(id);
+            }
+        }
+
+        // ① 備用一鍵複製網址 (相容 iPad 與多端)
+        function copyPageUrl() {
+            const currentUrl = window.location.href;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(currentUrl).then(() => {
+                    showToast("網址已成功複製到剪貼簿！");
+                }).catch(() => {
+                    fallbackCopy(currentUrl);
+                });
+            } else {
+                fallbackCopy(currentUrl);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const tempInput = document.createElement('input');
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            try {
+                document.execCommand('copy');
+                showToast("網址已成功複製到剪貼簿！");
+            } catch (err) {
+                showToast("無法自動複製，請手動複製網址");
+            }
+            document.body.removeChild(tempInput);
+        }
+
+        // ② 全螢幕切換功能 (跨裝置/iPad Safari 相容)
+        function toggleFullscreen() {
+            const doc = document;
+            const docEl = document.documentElement;
+            const icon = document.getElementById('fullscreenIcon');
+
+            const requestFS = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen || docEl.msRequestFullscreen;
+            const exitFS = doc.exitFullscreen || doc.webkitExitFullscreen || doc.mozCancelFullScreen || doc.msExitFullscreen;
+            const fsElement = doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement;
+
+            if (!fsElement) {
+                if (requestFS) {
+                    requestFS.call(docEl).then(() => {
+                        if (icon) {
+                            icon.classList.remove('fa-expand');
+                            icon.classList.add('fa-compress');
+                        }
+                    }).catch(() => {
+                        showToast("已進入全螢幕模式");
+                    });
+                } else {
+                    showToast("您的瀏覽器暫不支援全螢幕切換");
+                }
+            } else {
+                if (exitFS) {
+                    exitFS.call(doc);
+                }
+                if (icon) {
+                    icon.classList.remove('fa-compress');
+                    icon.classList.add('fa-expand');
+                }
+            }
+        }
+
+        // ③ 教師專區 密碼驗證 (密碼為 teacher)
+        function verifyTeacher() {
+            const pwd = document.getElementById('teacherPassword').value;
+            if (pwd === 'teacher') {
+                closeModal('teacherAuthModal');
+                updateTeacherDashboard();
+                openModal('teacherDashboardModal');
+            } else {
+                document.getElementById('authError').classList.remove('hidden');
+            }
+        }
+
+        // 更新教師管理專區數據
+        function updateTeacherDashboard() {
+            document.getElementById('dashPrediction').innerText = learningData.prediction || "尚無猜測數據";
+            
+            let statusText = [];
+            if(learningData.paraTransformed) statusText.push("已完成平行四邊形剪貼");
+            if(learningData.triRotated) statusText.push("已完成三角形旋轉");
+            document.getElementById('dashGeoStatus').innerText = statusText.length > 0 ? statusText.join(' / ') : "未完成操作";
+
+            const refDiv = document.getElementById('dashReflections');
+            if (learningData.reflection.facts || learningData.reflection.feelings || learningData.reflection.findings || learningData.reflection.future) {
+                refDiv.innerHTML = `
+                    <p class="border-b border-slate-200 pb-1"><strong>[Facts]:</strong> ${learningData.reflection.facts || '未填寫'}</p>
+                    <p class="border-b border-slate-200 pb-1"><strong>[Feelings]:</strong> ${learningData.reflection.feelings || '未填寫'}</p>
+                    <p class="border-b border-slate-200 pb-1"><strong>[Findings]:</strong> ${learningData.reflection.findings || '未填寫'}</p>
+                    <p><strong>[Future]:</strong> ${learningData.reflection.future || '未填寫'}</p>
+                `;
+            } else {
+                refDiv.innerHTML = `<p class="text-slate-500 font-bold">目前無提交的反思資料。</p>`;
+            }
+        }
+
+        // 清除所有數據
+        function clearAllData() {
+            learningData = {
+                prediction: "",
+                paraTransformed: false,
+                triRotated: false,
+                reflection: { facts: "", feelings: "", findings: "", future: "" }
+            };
+            document.getElementById('reflectionForm').reset();
+            document.getElementById('predictionResult').classList.add('hidden');
+            
+            // 重設猜測按鈕樣式
+            [1, 2, 3].forEach(id => {
+                const btn = document.getElementById(`btnPred${id}`);
+                if(btn) btn.classList.remove('ring-4', 'ring-indigo-600', 'scale-105');
+            });
+
+            resetParaCanvas();
+            resetTriCanvas();
+            updateTeacherDashboard();
+            showToast("所有學生學習歷程數據已歸零清空！");
+        }
+
+        // 頁籤切換
+        function switchTab(actNum) {
+            [1, 2, 3].forEach(num => {
+                const actEl = document.getElementById(`act${num}`);
+                const tabBtn = document.getElementById(`nav-tab${num}`);
+                if (num === actNum) {
+                    actEl.classList.remove('hidden');
+                    tabBtn.className = "py-3 md:py-4 rounded-xl text-lg md:text-2xl font-extrabold transition-all bg-amber-400 text-slate-900 shadow-md";
+                } else {
+                    actEl.classList.add('hidden');
+                    tabBtn.className = "py-3 md:py-4 rounded-xl text-lg md:text-2xl font-extrabold transition-all text-slate-600 hover:bg-slate-300";
+                }
+            });
+
+            // 切換到活動二時重繪 Canvas 確保尺寸正確
+            if(actNum === 2) {
+                setTimeout(() => {
+                    drawCanvas1();
+                    drawCanvas2();
+                }, 50);
+            }
+        }
+
+        // 活動一：學生猜測紀錄與高亮反饋
+        function makePrediction(choice, index) {
+            learningData.prediction = choice;
+            const resDiv = document.getElementById('predictionResult');
+            resDiv.classList.remove('hidden');
+            resDiv.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-500 mr-2"></i>你的預測是：<strong>${choice}</strong>！請前往「活動二」親手剪貼驗證你的想法！`;
+            
+            [1, 2, 3].forEach(id => {
+                const btn = document.getElementById(`btnPred${id}`);
+                if (id === index) {
+                    btn.classList.add('ring-4', 'ring-indigo-600', 'scale-105');
+                } else {
+                    btn.classList.remove('ring-4', 'ring-indigo-600', 'scale-105');
+                }
+            });
+
+            showToast("猜測已記錄！");
+        }
+
+        // 計算 Canvas 正確寬度 (避開隱藏狀態下尺寸為零問題)
+        function getCanvasWidth(canvas) {
+            if (!canvas || !canvas.parentElement) return 500;
+            const parentWidth = canvas.parentElement.clientWidth;
+            if (parentWidth <= 0) {
+                const mainContainer = document.querySelector('main');
+                return mainContainer ? Math.min(mainContainer.clientWidth - 32, 500) : 500;
+            }
+            return Math.max(280, parentWidth - 32);
+        }
+
+        // Canvas 初始化與事件綁定
+        function initCanvases() {
+            canvas1 = document.getElementById('canvas1');
+            if (canvas1) {
+                ctx1 = canvas1.getContext('2d');
+                setupCanvasTouchHandlers(canvas1, 1);
+            }
+            
+            canvas2 = document.getElementById('canvas2');
+            if (canvas2) {
+                ctx2 = canvas2.getContext('2d');
+                setupCanvasTouchHandlers(canvas2, 2);
+            }
+
+            drawCanvas1();
+            drawCanvas2();
+        }
+
+        // 為 Canvas 加入手勢與滑鼠直觀拖曳
+        function setupCanvasTouchHandlers(canvas, type) {
+            const handleStart = (x) => {
+                lastTouchX = x;
+                if (type === 1) isDraggingCanvas1 = true;
+                if (type === 2) isDraggingCanvas2 = true;
+            };
+
+            const handleMove = (x) => {
+                const deltaX = x - lastTouchX;
+                lastTouchX = x;
+
+                if (type === 1 && isDraggingCanvas1) {
+                    paraProgress = Math.min(100, Math.max(0, paraProgress + deltaX * 0.5));
+                    onParaSliderChange(paraProgress);
+                    document.getElementById('paraSlider').value = paraProgress;
+                }
+
+                if (type === 2 && isDraggingCanvas2) {
+                    triAngleProgress = Math.min(180, Math.max(0, triAngleProgress + deltaX * 0.9));
+                    onTriSliderChange(triAngleProgress);
+                    document.getElementById('triSlider').value = triAngleProgress;
+                }
+            };
+
+            const handleEnd = () => {
+                isDraggingCanvas1 = false;
+                isDraggingCanvas2 = false;
+            };
+
+            // Touch Events
+            canvas.addEventListener('touchstart', (e) => {
+                if (e.touches.length > 0) handleStart(e.touches[0].clientX);
+            }, { passive: true });
+
+            canvas.addEventListener('touchmove', (e) => {
+                if (e.touches.length > 0) handleMove(e.touches[0].clientX);
+            }, { passive: true });
+
+            canvas.addEventListener('touchend', handleEnd);
+
+            // Mouse Events
+            canvas.addEventListener('mousedown', (e) => handleStart(e.clientX));
+            window.addEventListener('mousemove', (e) => handleMove(e.clientX));
+            window.addEventListener('mouseup', handleEnd);
+        }
+
+        // 繪製背景網格 (修正 y 軸繪製語法錯誤)
+        function drawGrid(ctx, width, height) {
+            ctx.strokeStyle = '#f1f5f9';
+            ctx.lineWidth = 1;
+            for(let x = 0; x < width; x += 20) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+            for(let y = 0; y < height; y += 20) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y); // 修正原本語法缺陷
+                ctx.stroke();
+            }
+        }
+
+        // Canvas 1: 平行四邊形切割平移繪製
+        function drawCanvas1() {
+            if (!canvas1 || !ctx1) return;
+            const width = canvas1.width = getCanvasWidth(canvas1);
+            const height = canvas1.height = 240;
+
+            ctx1.clearRect(0, 0, width, height);
+            drawGrid(ctx1, width, height);
+
+            const scale = Math.min(width / 500, 1);
+            const startX = 60 * scale;
+            const startY = 170 * scale;
+            const baseLen = 220 * scale;
+            const hLen = 110 * scale;
+            const offsetX = 70 * scale;
+
+            // 輔助底線
+            ctx1.beginPath();
+            ctx1.setLineDash([5, 5]);
+            ctx1.moveTo(startX - 20, startY);
+            ctx1.lineTo(startX + baseLen + offsetX + 30, startY);
+            ctx1.strokeStyle = '#cbd5e1';
+            ctx1.lineWidth = 2;
+            ctx1.stroke();
+            ctx1.setLineDash([]);
+
+            // 主要梯形部分 (固定)
+            ctx1.beginPath();
+            ctx1.moveTo(startX + offsetX, startY - hLen); // 上左
+            ctx1.lineTo(startX + baseLen + offsetX, startY - hLen); // 上右
+            ctx1.lineTo(startX + baseLen, startY); // 下右
+            ctx1.lineTo(startX + offsetX, startY); // 下左
+            ctx1.closePath();
+            ctx1.fillStyle = '#6ee7b7';
+            ctx1.fill();
+            ctx1.strokeStyle = '#059669';
+            ctx1.lineWidth = 3;
+            ctx1.stroke();
+
+            // 平移直角三角形部分
+            const currentShift = (paraProgress / 100) * baseLen;
+            ctx1.save();
+            ctx1.translate(currentShift, 0);
+
+            ctx1.beginPath();
+            ctx1.moveTo(startX, startY); // 左下頂點
+            ctx1.lineTo(startX + offsetX, startY); // 右下直角頂點
+            ctx1.lineTo(startX + offsetX, startY - hLen); // 上頂點
+            ctx1.closePath();
+            ctx1.fillStyle = '#34d399';
+            ctx1.fill();
+            ctx1.strokeStyle = '#047857';
+            ctx1.lineWidth = 3;
+            ctx1.stroke();
+
+            // 虛線剪裁線
+            ctx1.beginPath();
+            ctx1.setLineDash([4, 4]);
+            ctx1.moveTo(startX + offsetX, startY);
+            ctx1.lineTo(startX + offsetX, startY - hLen);
+            ctx1.strokeStyle = '#e11d48';
+            ctx1.lineWidth = 3;
+            ctx1.stroke();
+            ctx1.restore();
+
+            // 標示文字與符號
+            ctx1.fillStyle = '#0f172a';
+            ctx1.font = `bold ${Math.max(14, 18 * scale)}px Noto Sans TC`;
+            ctx1.textAlign = 'center';
+            ctx1.fillText("底 (b = 10m)", startX + offsetX + (baseLen / 2), startY + 30 * scale);
+
+            ctx1.fillStyle = '#e11d48';
+            ctx1.fillText("高 (h = 6m)", Math.max(40, startX + offsetX - 45 * scale), startY - hLen / 2);
+        }
+
+        function onParaSliderChange(val) {
+            paraProgress = parseFloat(val);
+            document.getElementById('paraPercent').innerText = `${Math.round(paraProgress)}%`;
+            if (paraProgress > 0) learningData.paraTransformed = true;
+            drawCanvas1();
+        }
+
+        function animateParaTransform() {
+            if (paraAnimId) cancelAnimationFrame(paraAnimId);
+            let target = paraProgress >= 100 ? 0 : 100;
+            function step() {
+                if (Math.abs(paraProgress - target) < 1.5) {
+                    paraProgress = target;
+                    onParaSliderChange(paraProgress);
+                    document.getElementById('paraSlider').value = paraProgress;
+                    return;
+                }
+                paraProgress += (target - paraProgress) * 0.12;
+                onParaSliderChange(paraProgress);
+                document.getElementById('paraSlider').value = paraProgress;
+                paraAnimId = requestAnimationFrame(step);
+            }
+            step();
+        }
+
+        function resetParaCanvas() {
+            if (paraAnimId) cancelAnimationFrame(paraAnimId);
+            paraProgress = 0;
+            document.getElementById('paraSlider').value = 0;
+            document.getElementById('paraPercent').innerText = "0%";
+            drawCanvas1();
+        }
+
+        // Canvas 2: 雙三角形旋轉拼貼繪製
+        function drawCanvas2() {
+            if (!canvas2 || !ctx2) return;
+            const width = canvas2.width = getCanvasWidth(canvas2);
+            const height = canvas2.height = 240;
+
+            ctx2.clearRect(0, 0, width, height);
+            drawGrid(ctx2, width, height);
+
+            const scale = Math.min(width / 500, 1);
+            const x1 = 80 * scale, y1 = 170 * scale;
+            const x2 = 280 * scale, y2 = 170 * scale;
+            const x3 = 200 * scale, y3 = 60 * scale;
+
+            // 固定 1 號三角形
+            ctx2.beginPath();
+            ctx2.moveTo(x1, y1);
+            ctx2.lineTo(x2, y2);
+            ctx2.lineTo(x3, y3);
+            ctx2.closePath();
+            ctx2.fillStyle = '#93c5fd';
+            ctx2.fill();
+            ctx2.strokeStyle = '#1d4ed8';
+            ctx2.lineWidth = 3;
+            ctx2.stroke();
+
+            ctx2.fillStyle = '#1e3a8a';
+            ctx2.font = `bold ${Math.max(14, 16 * scale)}px Noto Sans TC`;
+            ctx2.textAlign = 'center';
+            ctx2.fillText("1號三角形", (x1 + x2 + x3) / 3, (y1 + y2 + y3) / 3 + 10);
+
+            // 旋轉 2 號三角形 (圍繞右側腰邊中點旋轉)
+            const pivotX = (x2 + x3) / 2;
+            const pivotY = (y2 + y3) / 2;
+            const rad = (triAngleProgress * Math.PI) / 180;
+
+            ctx2.save();
+            ctx2.translate(pivotX, pivotY);
+            ctx2.rotate(rad);
+            ctx2.translate(-pivotX, -pivotY);
+
+            ctx2.beginPath();
+            ctx2.moveTo(x1, y1);
+            ctx2.lineTo(x2, y2);
+            ctx2.lineTo(x3, y3);
+            ctx2.closePath();
+            ctx2.fillStyle = 'rgba(96, 165, 250, 0.85)';
+            ctx2.fill();
+            ctx2.strokeStyle = '#1e40af';
+            ctx2.lineWidth = 3;
+            ctx2.stroke();
+
+            ctx2.fillStyle = '#ffffff';
+            ctx2.fillText("2號三角形", (x1 + x2 + x3) / 3, (y1 + y2 + y3) / 3 + 5);
+            ctx2.restore();
+
+            // 底標籤
+            ctx2.fillStyle = '#dc2626';
+            ctx2.fillText("底 (b = 10m)", (x1 + x2) / 2, y1 + 30 * scale);
+        }
+
+        function onTriSliderChange(val) {
+            triAngleProgress = parseFloat(val);
+            document.getElementById('triAngle').innerText = `${Math.round(triAngleProgress)}°`;
+            if (triAngleProgress > 0) learningData.triRotated = true;
+            drawCanvas2();
+        }
+
+        function animateTriRotate() {
+            if (triAnimId) cancelAnimationFrame(triAnimId);
+            let target = triAngleProgress >= 180 ? 0 : 180;
+            function step() {
+                if (Math.abs(triAngleProgress - target) < 1.5) {
+                    triAngleProgress = target;
+                    onTriSliderChange(triAngleProgress);
+                    document.getElementById('triSlider').value = triAngleProgress;
+                    return;
+                }
+                triAngleProgress += (target - triAngleProgress) * 0.12;
+                onTriSliderChange(triAngleProgress);
+                document.getElementById('triSlider').value = triAngleProgress;
+                triAnimId = requestAnimationFrame(step);
+            }
+            step();
+        }
+
+        function resetTriCanvas() {
+            if (triAnimId) cancelAnimationFrame(triAnimId);
+            triAngleProgress = 0;
+            document.getElementById('triSlider').value = 0;
+            document.getElementById('triAngle').innerText = "0°";
+            drawCanvas2();
+        }
+
+        // 活動三：提交 4F 反思紀錄
+        function submitReflection(e) {
+            e.preventDefault();
+            learningData.reflection.facts = document.getElementById('f_facts').value.trim();
+            learningData.reflection.feelings = document.getElementById('f_feelings').value.trim();
+            learningData.reflection.findings = document.getElementById('f_findings').value.trim();
+            learningData.reflection.future = document.getElementById('f_future').value.trim();
+
+            showToast("反思紀錄已成功提交！");
+        }
+
+        // Toast 訊息提示器
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            if (!toast) return;
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
